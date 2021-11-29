@@ -1,6 +1,4 @@
 # SauronsEye
-Face tracking python script with moving "eye of sauron" depending on the face coordinates
-
 This script tracks your face via webcam, gets coordinates of your face and displays a picture at that location so it looks like the picture is following you... until the webcam can't see you anymore...
 
 ## Requirements:
