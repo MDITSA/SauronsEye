@@ -1,12 +1,13 @@
 # Following modules are needed:
-# platform(should be already installed), pygame, opencv-python, face_recognition
+# platform(should be already installed), pygame, opencv-python, dlib, imutils
 #
-# Every other module in the requirements.txt is a automatically installed dependency (as far as i remember cmake is needed to for dlib, which is needed for face_recognition)
+# Every other module in the requirements.txt is a automatically installed dependency (as far as i remember cmake is needed to for dlib)
 
 import platform
 import pygame
 import cv2
-import face_recognition
+import dlib
+from imutils import face_utils
 
 pygame.init()
 
@@ -41,20 +42,24 @@ class SauronsEye(object):
         self.bg_colour = (0,0,0)
         self.tick = pygame.time.get_ticks()
 
+        self.face_detect = dlib.get_frontal_face_detector()
+
     def find_face(self):
         ret, self.frame = self.video_capture.read()
-        self.rgb_frame = self.frame[:, :, ::-1]
-        self.face_locations = face_recognition.face_locations(self.rgb_frame)
-        for face_top, face_right, face_bottom, face_left in self.face_locations:
+        self.gray_frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
+        self.face_locations = self.face_detect(self.gray_frame, 1)
+        for (i, face) in enumerate(self.face_locations):
+            (face_left, face_top, face_width, face_height) = face_utils.rect_to_bb(face)
+            #print("left: ", face_left, " top: ", face_top, " width: ", face_width, " height: ", face_height)
             self.face_top_resized = face_top*4
-            self.face_right_resized = face_right*4
-            self.face_bottom_resized = face_bottom*4
+            self.face_right_resized = (face_left - face_width)*4
+            self.face_bottom_resized = (face_top - face_height)*4
             self.face_left_resized = face_left*4
             
             self.face_center_x = (self.face_left_resized+self.face_right_resized)/2
             self.face_center_y = (self.face_top_resized+self.face_bottom_resized)/2
 
-            #self.image_pos_x = 1920-self.face_center_x-(self.image_width/4) #1920- needed because otherwise the movement would be inverted on a monitor... dont ask me why...
+            #self.image_pos_x = 1920-self.face_center_x-(self.image_width/2) #1920- needed because otherwise the movement would be inverted on a monitor... dont ask me why...
             self.image_pos_x = self.face_center_x-(self.image_width/2)
             self.image_pos_y = self.face_center_y-(self.image_height/2)
 
@@ -79,7 +84,7 @@ class SauronsEye(object):
             self.show_eye()
 
             self.now = pygame.time.get_ticks()
-            if self.now > self.tick + 25000:
+            if self.now > self.tick + 30000:
                 self.play_voice()
                 self.tick = self.now
 
