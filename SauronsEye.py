@@ -1,7 +1,7 @@
 # Following modules are needed:
 # platform(should be already installed), pygame, opencv-python, dlib, imutils
 #
-# Every other module in the requirements.txt is a automatically installed dependency (as far as i remember cmake is needed to for dlib)
+# Every other module in the requirements.txt is a automatically installed dependency (cmake is needed to for dlib)
 
 import platform
 import pygame
@@ -21,8 +21,9 @@ class SauronsEye(object):
         elif self.platform == 'Linux' :
             self.video_capture = cv2.VideoCapture(8, cv2.CAP_V4L2) #Adjust depending on webcam settings
         
-        self.video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 480)
-        self.video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 270)
+        self.performance_boost = 3 #Higher boost == better performance, less accuracy -- min value 1
+        self.video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, (1920/self.performance_boost))
+        self.video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, (1080/self.performance_boost))
         self.face_locations = []
 
         self.display_surface = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
@@ -47,20 +48,20 @@ class SauronsEye(object):
     def find_face(self):
         ret, self.frame = self.video_capture.read()
         self.gray_frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
-        self.face_locations = self.face_detect(self.gray_frame, 1)
+        self.face_locations = self.face_detect(self.gray_frame, 0)
         for (i, face) in enumerate(self.face_locations):
             (face_left, face_top, face_width, face_height) = face_utils.rect_to_bb(face)
             #print("left: ", face_left, " top: ", face_top, " width: ", face_width, " height: ", face_height)
-            self.face_top_resized = face_top*4
-            self.face_right_resized = (face_left - face_width)*4
-            self.face_bottom_resized = (face_top - face_height)*4
-            self.face_left_resized = face_left*4
+            self.face_top_resized = face_top*self.performance_boost
+            self.face_right_resized = (face_left + face_width)*self.performance_boost
+            self.face_bottom_resized = (face_top + face_height)*self.performance_boost
+            self.face_left_resized = face_left*self.performance_boost
             
             self.face_center_x = (self.face_left_resized+self.face_right_resized)/2
             self.face_center_y = (self.face_top_resized+self.face_bottom_resized)/2
 
-            #self.image_pos_x = 1920-self.face_center_x-(self.image_width/2) #1920- needed because otherwise the movement would be inverted on a monitor... dont ask me why...
-            self.image_pos_x = self.face_center_x-(self.image_width/2)
+            self.image_pos_x = 1920-self.face_center_x-(self.image_width/2) #1920- needed because otherwise the movement would be inverted on a monitor
+            #self.image_pos_x = self.face_center_x-(self.image_width/2) #Beamer with rear projection
             self.image_pos_y = self.face_center_y-(self.image_height/2)
 
     def show_eye(self):
@@ -84,7 +85,7 @@ class SauronsEye(object):
             self.show_eye()
 
             self.now = pygame.time.get_ticks()
-            if self.now > self.tick + 30000:
+            if self.now > self.tick + 60000:
                 self.play_voice()
                 self.tick = self.now
 
